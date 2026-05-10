@@ -1,9 +1,10 @@
 import os
 import uuid
+import tempfile
 from fastapi import APIRouter, UploadFile, File
 from pathlib import Path
 from app.services.pdf_parser import parse_pdf, get_parsed_textbook, list_parsed_textbooks
-from app.utils import get_data_dir
+from app.utils import get_data_dir, store_in_memory
 
 router = APIRouter()
 
@@ -14,10 +15,21 @@ async def upload_textbook(file: UploadFile = File(...)):
     file_id = str(uuid.uuid4())[:8]
     file_ext = Path(file.filename).suffix.lower()
 
-    save_path = UPLOAD_DIR / f"{file_id}{file_ext}"
     content = await file.read()
-    with open(save_path, 'wb') as f:
-        f.write(content)
+
+    # Try to save to disk, fall back to /tmp
+    save_path = None
+    try:
+        save_path = UPLOAD_DIR / f"{file_id}{file_ext}"
+        with open(save_path, 'wb') as f:
+            f.write(content)
+    except Exception:
+        # Fall back to /tmp
+        tmp_dir = Path(tempfile.gettempdir()) / "knowledge_agent" / "uploads"
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        save_path = tmp_dir / f"{file_id}{file_ext}"
+        with open(save_path, 'wb') as f:
+            f.write(content)
 
     textbook_id = f"book_{file_id}"
 
@@ -41,6 +53,8 @@ async def upload_textbook(file: UploadFile = File(...)):
             "total_chars": len(text),
             "chapters": chapters
         }
+        # Store in memory
+        store_in_memory("parsed_textbooks", textbook_id, textbook)
     else:
         return {"error": f"不支持的文件格式: {file_ext}"}
 

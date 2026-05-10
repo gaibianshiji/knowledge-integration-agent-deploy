@@ -3,7 +3,7 @@ import re
 import os
 import json
 from pathlib import Path
-from app.utils import get_data_dir
+from app.utils import get_data_dir, store_in_memory, get_from_memory, list_from_memory
 
 DATA_DIR = get_data_dir("parsed")
 
@@ -128,25 +128,43 @@ def parse_pdf(file_path: str, textbook_id: str) -> dict:
         "chapters": chapters
     }
 
-    output_path = DATA_DIR / f"{textbook_id}.json"
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(textbook, f, ensure_ascii=False, indent=2)
+    # Store in memory (always works)
+    store_in_memory("parsed_textbooks", textbook_id, textbook)
+
+    # Try to save to disk (may fail in serverless)
+    try:
+        output_path = DATA_DIR / f"{textbook_id}.json"
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(textbook, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass  # Disk storage failed, but memory storage worked
 
     doc.close()
     return textbook
 
 def get_parsed_textbook(textbook_id: str) -> dict | None:
+    # Try memory first
+    result = get_from_memory("parsed_textbooks", textbook_id)
+    if result:
+        return result
+
+    # Try disk
     path = DATA_DIR / f"{textbook_id}.json"
     if path.exists():
         with open(path, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            data = json.load(f)
+            store_in_memory("parsed_textbooks", textbook_id, data)  # Cache in memory
+            return data
     return None
 
 def list_parsed_textbooks() -> list[dict]:
     result = []
-    for path in DATA_DIR.glob("*.json"):
-        with open(path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+
+    # Get from memory
+    memory_items = list_from_memory("parsed_textbooks")
+    seen_ids = set()
+    for data in memory_items:
+        if data["textbook_id"] not in seen_ids:
             result.append({
                 "textbook_id": data["textbook_id"],
                 "filename": data["filename"],
@@ -155,4 +173,24 @@ def list_parsed_textbooks() -> list[dict]:
                 "total_chars": data["total_chars"],
                 "chapter_count": len(data["chapters"])
             })
+            seen_ids.add(data["textbook_id"])
+
+    # Also check disk
+    try:
+        for path in DATA_DIR.glob("*.json"):
+            with open(path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                if data["textbook_id"] not in seen_ids:
+                    result.append({
+                        "textbook_id": data["textbook_id"],
+                        "filename": data["filename"],
+                        "title": data["title"],
+                        "total_pages": data["total_pages"],
+                        "total_chars": data["total_chars"],
+                        "chapter_count": len(data["chapters"])
+                    })
+                    seen_ids.add(data["textbook_id"])
+    except Exception:
+        pass  # Disk access failed
+
     return result
