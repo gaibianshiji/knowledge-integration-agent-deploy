@@ -31,6 +31,8 @@ data/graphs/
 data/chunks/
 data/index/
 data/integration/
+backend/data/
+textbooks/
 
 # IDE
 .vscode/
@@ -47,3 +49,5 @@ frontend/dist/
 
 # Worktrees
 .worktrees/
+
+.vercel
