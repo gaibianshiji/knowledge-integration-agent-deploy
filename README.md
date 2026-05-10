@@ -17,10 +17,10 @@ AI全栈极速黑客松参赛作品 - 用AI帮教师把7本教材变成不到30%
 | 后端 | FastAPI (Python) |
 | 前端 | React + D3.js |
 | LLM | DeepSeek API |
-| Embedding | BGE-small-zh |
-| 向量库 | FAISS |
+| Embedding | 通义千问 text-embedding-v4 |
+| 向量检索 | 余弦相似度 |
 | 文件解析 | PyMuPDF |
-| 部署 | Cloudflare Pages + Railway |
+| 部署 | Vercel (全栈) |
 
 ## 快速开始
 
@@ -138,47 +138,19 @@ knowledge-integration-agent/
 
 ## 部署
 
-### 方案一：Cloudflare Pages + Railway（推荐）
+### 在线访问
 
-#### 1. 部署后端到 Railway
+**部署地址**: https://0hacthon.vercel.app
 
-1. 访问 [railway.app](https://railway.app) 并登录
-2. 点击 "New Project" → "Deploy from GitHub repo"
-3. 选择你的仓库，设置 Root Directory 为 `backend`
-4. 添加环境变量：
-   - `DEEPSEEK_API_KEY`: 你的DeepSeek API Key
-5. Railway会自动检测 `requirements.txt` 并部署
-6. 部署完成后，获取后端URL（如 `https://xxx.up.railway.app`）
+### 部署到 Vercel
 
-#### 2. 部署前端到 Cloudflare Pages
+1. Fork 本仓库到你的 GitHub 账号
+2. 访问 [vercel.com](https://vercel.com) 并用 GitHub 登录
+3. 点击 "New Project" → 导入你的仓库
+4. Vercel 会自动检测 `vercel.json` 配置并部署
+5. 部署完成后获取前端URL
 
-1. 访问 [dash.cloudflare.com](https://dash.cloudflare.com)
-2. 进入 "Workers & Pages" → "Create application" → "Pages"
-3. 连接GitHub仓库
-4. 设置：
-   - Framework preset: `Vite`
-   - Build command: `npm run build`
-   - Build output directory: `dist`
-   - Root directory: `frontend`
-5. 添加环境变量：
-   - `VITE_API_BASE`: 你的Railway后端URL + `/api`（如 `https://xxx.up.railway.app/api`）
-6. 部署完成后获取前端URL
-
-#### 3. 更新 _redirects 文件
-
-编辑 `frontend/public/_redirects`，将 `your-railway-backend` 替换为你的Railway后端URL：
-```
-/api/*  https://your-actual-railway-url.up.railway.app/api/:splat  200
-```
-
-### 方案二：魔搭创空间（免费）
-
-1. 访问 [modelscope.cn](https://modelscope.cn) 创建创空间
-2. 选择 Gradio/Streamlit 框架
-3. 上传代码并配置环境变量
-4. 适合不需要前后端分离的场景
-
-### 方案三：本地开发
+### 本地开发
 
 ```bash
 # 后端
