@@ -1,0 +1,16 @@
+{
+  "name": "knowledge-integration-agent",
+  "services": [
+    {
+      "name": "backend",
+      "rootDir": "backend",
+      "build": {
+        "type": "docker"
+      },
+      "env": {
+        "DEEPSEEK_API_KEY": "sk-aa0aeaf480484648a8a93d672d76334d",
+        "QIANWEN_API_KEY": "sk-87fd5a8557844463b46cf9cb518aff9f"
+      }
+    }
+  ]
+}
